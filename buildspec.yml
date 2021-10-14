@@ -1,16 +1,14 @@
 version: 0.2
 
-
 phases:
   pre_build:
     commands:
-      - mvn clean install
       - echo Logging in to Amazon ECR...
       - aws --version
-      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 506757590832.dkr.ecr.ap-south-1.amazonaws.com
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 012345678910.dkr.ecr.us-west-2.amazonaws.com
       - REPOSITORY_URI=506757590832.dkr.ecr.ap-south-1.amazonaws.com/new
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
   build:
     commands:
       - echo Build started on `date`
@@ -24,10 +22,6 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
-      - printf '[{"name":"order-service","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
-      - cat imagedefinitions.json
+      - printf '[{"name":"hello-world","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 artifacts:
-  files:
-   - imagedefinitions.json
-   - target/order-service.jar
-
+    files: imagedefinitions.json
